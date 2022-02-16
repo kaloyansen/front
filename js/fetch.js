@@ -78,7 +78,7 @@ class kalo {/* une classe général des instruments essenciels
             break;
         case SECTION:
             if (texte) {//keep old messages
-                SECTR.push(`${texte}<br>`);
+                SECTR.push(`<small>${texte}</small><br>`);
                 let rev = SECTR.slice();
                 SECTION.innerHTML = rev.reverse();
                 rev = [];
@@ -90,12 +90,16 @@ class kalo {/* une classe général des instruments essenciels
 
     }
 
-    static dumProp(lm) {
-        let prop;
+    static dumProp(obj) {
+        let prop, prop2;
         let log = "{";
-        for (prop in lm) {
-            let val = lm[prop];
-            if (val) log += `${prop}: ${val}, `;
+        for (prop in obj) {
+            let val = obj[prop];
+            log += `${prop}: ${val}, `;
+            /*for (prop2 in val) {
+                let val1 = val[prop2];
+                log += `${prop2}: ${val1}, `;                
+            }*/
         }
         return log + "}";
     }
@@ -136,32 +140,38 @@ const winterval = window.setInterval(() => {
 
 
 
-PAYLOAD = {};
-PAYLOAD.login = "eric@free.fr";
-PAYLOAD.password = 123456;
-/*
-PAYLOAD.title = "this is a ticket";
-PAYLOAD.body = "created by me";
-PAYLOAD.actualPosition = "here";
-PAYLOAD.status = "incimming";
-PAYLOAD.color = "blue";
-*/
+var PAYLOAD = {};
 
+loadpay(PAYLOAD);
+
+
+
+var inp = [];
+for (k in PAYLOAD) inp.push(`${k} = ${PAYLOAD[k]}`);
+
+
+let formData = new FormData();
+formData.append('login', 'eric@free.fr');
+formData.append('password', 123456);
 
 INPUT.innerHTML = JSON.stringify(PAYLOAD);
 
 INPUT.style.width = "100%";
+INPUT.style.height = "20vh";
 INPID.style.width = "100%";
+
 VALIDER.addEventListener("click", function() {
-    connexion(INPID.value, getInputChoix(METHOD), PAYLOAD, SECTION);
+    PAYLOAD = JSON.parse(INPUT.value);
+    connexion(INPID.value, getInputChoix(METHOD), formData, SECTION);
 }, false);
 
 
 EFFACER.addEventListener("click", function() {
     const method = getInputChoix(METHOD);
     const adresse = INPID.value;
-    const payload = JSON.stringify(PAYLOAD);
-    const check = `*** check ${method} => ${adresse} => ${payload} ***`; 
+    //const payload = JSON.stringify(PAYLOAD);
+    if (INPUT.value) PAYLOAD = JSON.parse(INPUT.value);
+    const check = `*** check ${method} => ${adresse} => ${JSON.stringify(PAYLOAD)} ***`; 
     kalo.setContent(SECTION, check);
 }, false);
 
@@ -196,9 +206,11 @@ function connexion(adresse, method, payload, lm) {
     window.console.log(`go ${method} with ${JSON.stringify(payload)} to ${adresse}`);
     const headers = {"Content-type": "application/json", "Accept": "application/json"}
     var format = {method: method, headers: headers};
-    if (payload && method != "get") format = {method: method,
-                                              body: JSON.stringify(payload),
-                                              headers: headers};
+    if (payload && method != "get") format = {//mode: 'no-cors',
+                                              //headers: headers,
+                                              //body: JSON.stringify(payload),
+                                              body: payload,
+                                              method: method};
     window.fetch(adresse, format)
         .then(response => {
             if (response.vdfvdqc) throw Error("oh non !");
@@ -206,12 +218,7 @@ function connexion(adresse, method, payload, lm) {
         })
         .then(json => {
             window.console.log(json);
-            //kalo.setContent(lm, JSON.stringify(json));//json.status_message);
-            if ("ok" in json) kalo.setContent(lm, `ok=${json.ok}`);
-            if ("check" in json) kalo.setContent(lm, `check=${json.check}`);
-            if ("message" in json) kalo.setContent(lm, `message=${json.message}`);
-            if ("status" in json) kalo.setContent(lm, `status=${json.status}`);
-            if ("status_message" in json) kalo.setContent(lm, `statusmessage=${json.status_message}`);
+            kalo.setContent(lm, kalo.dumProp(json));
             kalo.setContent(lm, `******** ${method} => ${adresse} ********`); 
         })
         .catch(e => {
@@ -230,4 +237,14 @@ function readTxtFile(inpuTypeFile, resultat) {
     });
 }
 
+
+function loadpay(lm) {
+    //lm.login = "eric@free.fr";
+    //lm.password = 123456;
+    lm.title = "this is a ticket";
+    lm.body = "created by me";
+    lm.actualPosition = "here";
+    lm.status = "incomming";
+    lm.color = "blue";
+}
 
